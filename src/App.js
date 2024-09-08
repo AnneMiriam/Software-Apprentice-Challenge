@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import './App.css';
 import { useState, useEffect } from 'react';
 // import AdCard from './AdCard';
@@ -6,24 +5,16 @@ import AdContainer from './AdContainer';
 import SearchBar from './SearchBar';
 
 const fakeAPI = "http://localhost:3000/fakeDataSet"
-// const mockAdvert = {
-//                 "campaign_name": "Back to School",
-//                 "media_buy_name": "Social Media Ads",
-//                 "ad_name": "Classroom Essentials",
-//                 "spend": 850,
-//                 "impressions": 16000,
-//                 "clicks": 720,
-//                 "results": 45
-//               }
 
 function App() {
-  const [ads, setAds] = useState([])
+  const [ads, setAds] = useState([]);
   // new state for ads to show
-  const [search, setSearch] = useState("")
-  const [sortBy, setSortBy] = useState("Ascending")
-console.log(ads);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("");
+// console.log(ads);
   
-function formatAds(ads) {
+  function formatAds(ads) {
+    // Format properties to standardized data types
     const formattedFbAds = ads.facebook_ads.map(ad => {
       return {
         campaign: ad.campaign_name,
@@ -54,9 +45,10 @@ function formatAds(ads) {
         clicks: ad.post_clicks
       }
     })
-
+    // new array of all ads
     const adsNoResults = [...formattedFbAds, ...formattedTwAds, ...formattedScAds]; 
-
+    
+    // find all analytics that match adds, add up the results, in no results post 0
     return adsNoResults.map(ad => {
       const matchingAnalytics = ads.google_analytics.filter(analytic => {
         return ad.campaign === analytic.utm_campaign && ad.adset === analytic.utm_medium && ad.creative === analytic.utm_content
@@ -72,21 +64,35 @@ function formatAds(ads) {
     })
   }
 
+  // fetch the API
   useEffect(() => {
     fetch(fakeAPI)
     .then(res => res.json())
     .then((res)=> {
       const formattedAds = formatAds(res)
-      setAds(formattedAds)
+      setAds(formattedAds);
     })
   }, [])
 
+  // Conditionally sorting ads only when sortBy is not empty
+  const sortedAds = sortBy === "" ? ads : [...ads].sort((a, b) => {
+    if (sortBy === "Ascending") {
+      return a.spend - b.spend;
+    } else if (sortBy === "Descending") {
+      return b.spend - a.spend;
+    }
+    return 0
+  });
+
+  // Filtering ads based on search input
+  const filteredAds = sortedAds.filter(ad => ad.campaign.toLowerCase().startsWith(search.toLowerCase()));
+
   return (
     <div className="App">
-      <header className="h-16 p-4" style={{backgroundColor: "#1e2f50"}}>
-        <SearchBar handleChange={setSearch} setSortBy={setSortBy} sortBy={sortBy} />
+      <header className="h-30 p-4" style={{backgroundColor: "#1e2f50"}}>
+        <SearchBar setSortBy={setSortBy} sortBy={sortBy} search={search} setSearch={setSearch}/>
       </header>
-        <AdContainer ads={ads.filter(ad => ad.campaign.startsWith(search))}/>
+        <AdContainer ads={filteredAds}/>
       
     </div>
   );
